@@ -1,0 +1,450 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CyberMeme Generator - 賽博朋克迷因產生器</title>
+
+  <!-- 引入 Google Fonts: Anton (經典粗體迷因字體) + Noto Sans TC + Inter (介面字體) -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Anton&family=Inter:wght@400;600;700;800&family=Noto+Sans+TC:wght@700;900&display=swap" rel="stylesheet">
+
+  <!-- 引入 Font Awesome 圖示庫 -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+  <!-- 引入 Tailwind CSS CDN 快速建立美觀排版 -->
+  <script src="https://cdn.tailwindcss.com"></script>
+
+  <!-- 引入 html2canvas CDN (將網頁 DOM 轉為圖片下載) -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+
+  <!-- 自訂 CSS 樣式 -->
+  <style>
+    :root {
+      --primary-neon: #00f0ff;
+      --secondary-neon: #ff007f;
+      --bg-dark: #0a0b10;
+    }
+
+    body {
+      font-family: 'Inter', 'Noto Sans TC', sans-serif;
+      background-color: var(--bg-dark);
+      background-image: 
+        radial-gradient(circle at 15% 15%, rgba(0, 240, 255, 0.08) 0%, transparent 40%),
+        radial-gradient(circle at 85% 85%, rgba(255, 0, 127, 0.08) 0%, transparent 40%);
+      color: #f3f4f6;
+      min-height: 100vh;
+    }
+
+    /* 霓虹毛玻璃卡片效果 */
+    .glass-panel {
+      background: rgba(18, 22, 36, 0.65);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5);
+    }
+
+    .glass-input {
+      background: rgba(10, 12, 20, 0.7);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      transition: all 0.25s ease;
+    }
+
+    .glass-input:focus {
+      border-color: var(--primary-neon);
+      box-shadow: 0 0 15px rgba(0, 240, 255, 0.3);
+      outline: none;
+    }
+
+    /* 經典迷因文字樣式：黑色強烈描邊與陰影，確保在任何底圖上都極度清晰 */
+    .meme-text {
+      font-family: 'Anton', 'Noto Sans TC', sans-serif;
+      text-transform: uppercase;
+      color: #ffffff;
+      text-align: center;
+      word-wrap: break-word;
+      line-height: 1.15;
+      letter-spacing: 1px;
+      user-select: none;
+      /* 多重描邊與深暗陰影效果 */
+      -webkit-text-stroke: 2px #000000;
+      text-shadow: 
+        3px 3px 0 #000,
+        -3px -3px 0 #000,  
+        3px -3px 0 #000,
+        -3px 3px 0 #000,
+        0px 3px 0 #000,
+        0px -3px 0 #000,
+        3px 0px 0 #000,
+        -3px 0px 0 #000,
+        2px 5px 10px rgba(0,0,0,0.9);
+    }
+
+    /* 酷炫按鈕特效 */
+    .neon-button {
+      background: linear-gradient(135deg, #00f0ff 0%, #7000ff 50%, #ff007f 100%);
+      background-size: 200% 200%;
+      animation: gradientShift 6s ease infinite;
+      transition: all 0.3s ease;
+    }
+
+    .neon-button:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 10px 25px rgba(0, 240, 255, 0.4);
+    }
+
+    @keyframes gradientShift {
+      0% { background-position: 0% 50%; }
+      50% { background-position: 100% 50%; }
+      100% { background-position: 0% 50%; }
+    }
+
+    /* 自訂滑桿 (Range Input) 樣式 */
+    input[type=range] {
+      accent-color: var(--primary-neon);
+    }
+  </style>
+</head>
+<body class="p-4 md:p-8 flex flex-col justify-between">
+
+  <!-- 頁面頂部標題區 -->
+  <header class="max-w-6xl mx-auto w-full mb-8 text-center md:text-left flex flex-col md:flex-row items-center justify-between gap-4">
+    <div class="flex items-center gap-3">
+      <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-cyan-400 to-pink-500 flex items-center justify-center shadow-lg shadow-cyan-500/20">
+        <i class="fa-solid font-bold text-slate-950 text-xl fa-face-laugh-squint"></i>
+      </div>
+      <div>
+        <h1 class="text-2xl md:text-3xl font-extrabold tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-cyan-400 via-purple-300 to-pink-500">
+          CYBER MEME LAB
+        </h1>
+        <p class="text-xs text-slate-400">極速自定義迷因產生器 · 純前端零延遲</p>
+      </div>
+    </div>
+    
+    <div class="text-xs text-slate-400 bg-slate-900/60 border border-slate-800 px-3 py-1.5 rounded-full flex items-center gap-2">
+      <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span> 本機讀取防 CORS 錯誤
+    </div>
+  </header>
+
+  <!-- 主要內容區：左側/上方 控制面板，右側/下方 迷因即時預覽區 -->
+  <main class="max-w-6xl mx-auto w-full grid grid-cols-1 lg:grid-cols-12 gap-8 items-start mb-8">
+    
+    <!-- 【控制面板區】 (佔 5 欄) -->
+    <section class="lg:col-span-5 glass-panel rounded-3xl p-6 flex flex-col gap-6 order-2 lg:order-1">
+      
+      <!-- 1. 本機圖片上傳區 (使用 FileReader 防 CORS) -->
+      <div>
+        <label class="block text-sm font-semibold text-slate-300 mb-2 flex items-center gap-2">
+          <i class="fa-solid fa-image text-cyan-400"></i> 1. 上傳迷因底圖
+        </label>
+        
+        <!-- 隱藏原生檔案選擇器，改用好看的拖曳點擊區塊 -->
+        <div id="drop-zone" class="border-2 border-dashed border-slate-700 hover:border-cyan-400 rounded-2xl p-4 text-center cursor-pointer transition-all duration-300 bg-slate-900/40 hover:bg-slate-900/80 group">
+          <input type="file" id="image-upload" accept="image/*" class="hidden">
+          <div class="flex flex-col items-center gap-2">
+            <div class="w-12 h-12 rounded-full bg-slate-800 flex items-center justify-center text-slate-400 group-hover:text-cyan-400 group-hover:scale-110 transition-all">
+              <i class="fa-solid fa-cloud-arrow-up text-xl"></i>
+            </div>
+            <p class="text-xs font-medium text-slate-300">點擊上傳 或 將圖片拖曳至此</p>
+            <p class="text-[10px] text-slate-500">支援 JPG, PNG, WEBP, GIF</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- 2. 雙層文字輸入區 -->
+      <div class="space-y-4">
+        <label class="block text-sm font-semibold text-slate-300 flex items-center gap-2">
+          <i class="fa-solid fa-font text-cyan-400"></i> 2. 文字內容輸入
+        </label>
+        
+        <!-- 上方文字 -->
+        <div>
+          <span class="text-xs text-slate-400 block mb-1">上方文字 (Top Text)</span>
+          <input type="text" id="top-text-input" value="當你寫的程式碼" placeholder="請輸入上方文字..." 
+            class="w-full px-4 py-2.5 rounded-xl text-slate-100 text-sm glass-input placeholder-slate-500">
+        </div>
+
+        <!-- 下方文字 -->
+        <div>
+          <span class="text-xs text-slate-400 block mb-1">下方文字 (Bottom Text)</span>
+          <input type="text" id="bottom-text-input" value="第一次就直接完美執行" placeholder="請輸入下方文字..." 
+            class="w-full px-4 py-2.5 rounded-xl text-slate-100 text-sm glass-input placeholder-slate-500">
+        </div>
+      </div>
+
+      <!-- 3. 參數滑桿控制區 -->
+      <div class="space-y-4 pt-2 border-t border-slate-800">
+        <label class="block text-sm font-semibold text-slate-300 flex items-center gap-2">
+          <i class="fa-solid fa-sliders text-cyan-400"></i> 3. 樣式與位置調整
+        </label>
+
+        <!-- 字體大小滑桿 -->
+        <div>
+          <div class="flex justify-between text-xs text-slate-400 mb-1">
+            <span>文字大小 (Font Size)</span>
+            <span id="font-size-val" class="text-cyan-400 font-mono">42px</span>
+          </div>
+          <input type="range" id="font-size-slider" min="20" max="90" value="42" class="w-full h-2 bg-slate-800 rounded-lg appearance-none cursor-pointer">
+        </div>
+
+        <!-- 上方文字垂直位置滑桿 -->
+        <div>
+          <div class="flex justify-between text-xs text-slate-400 mb-1">
+            <span>上方文字垂直距離 (Top Offset)</span>
+            <span id="top-offset-val" class="text-cyan-400 font-mono">16px</span>
+          </div>
+          <input type="range" id="top-offset-slider" min="0" max="200" value="16" class="w-full h-2 bg-slate-800 rounded-lg appearance-none cursor-pointer">
+        </div>
+
+        <!-- 下方文字垂直位置滑桿 -->
+        <div>
+          <div class="flex justify-between text-xs text-slate-400 mb-1">
+            <span>下方文字垂直距離 (Bottom Offset)</span>
+            <span id="bottom-offset-val" class="text-cyan-400 font-mono">16px</span>
+          </div>
+          <input type="range" id="bottom-offset-slider" min="0" max="200" value="16" class="w-full h-2 bg-slate-800 rounded-lg appearance-none cursor-pointer">
+        </div>
+
+        <!-- 文字顏色選擇與大寫切換 -->
+        <div class="flex items-center justify-between pt-2">
+          <div class="flex items-center gap-2">
+            <span class="text-xs text-slate-400">文字顏色</span>
+            <input type="color" id="text-color-picker" value="#ffffff" class="w-8 h-8 rounded-lg cursor-pointer bg-transparent border-0">
+          </div>
+
+          <label class="flex items-center gap-2 cursor-pointer text-xs text-slate-300 select-none">
+            <input type="checkbox" id="uppercase-toggle" checked class="rounded bg-slate-800 border-slate-700 text-cyan-500 focus:ring-0">
+            自動轉大寫
+          </label>
+        </div>
+      </div>
+
+      <!-- 4. 一鍵下載按鈕 -->
+      <div class="pt-2">
+        <button id="download-btn" class="w-full py-4 rounded-2xl neon-button text-white font-bold text-base flex items-center justify-center gap-3 shadow-lg">
+          <i class="fa-solid fa-download text-lg"></i>
+          下載高畫質迷因 (MY-MEME.PNG)
+        </button>
+      </div>
+
+    </section>
+
+    <!-- 【迷因即時預覽區】 (佔 7 欄) -->
+    <section class="lg:col-span-7 flex flex-col items-center order-1 lg:order-2">
+      <div class="w-full flex items-center justify-between mb-3 px-1">
+        <span class="text-xs font-semibold uppercase tracking-wider text-slate-400 flex items-center gap-2">
+          <i class="fa-solid fa-eye text-pink-500"></i> 即時預覽畫布 (Live Preview)
+        </span>
+        <span class="text-[11px] text-slate-500">可直接觀察文字排版</span>
+      </div>
+
+      <!-- 迷因容器 (此區塊會被 html2canvas 擷取下載) -->
+      <div class="glass-panel p-3 rounded-3xl w-full flex justify-center items-center overflow-hidden">
+        
+        <div id="meme-container" class="relative w-full max-w-[550px] aspect-square bg-slate-900 rounded-2xl overflow-hidden flex justify-center items-center select-none shadow-2xl">
+          
+          <!-- 底圖預覽 (預設使用 SVG 高感光佔位圖) -->
+          <img id="meme-image" src="https://placehold.co/600x600/111827/00f0ff?text=Upload+Your+Image" alt="Meme Background" class="w-full h-full object-contain pointer-events-none">
+
+          <!-- 上方文字圖層 -->
+          <div id="top-text-display" class="meme-text absolute left-0 right-0 px-4 top-4">
+            當你寫的程式碼
+          </div>
+
+          <!-- 下方文字圖層 -->
+          <div id="bottom-text-display" class="meme-text absolute left-0 right-0 px-4 bottom-4">
+            第一次就直接完美執行
+          </div>
+
+        </div>
+
+      </div>
+
+      <!-- 提示訊息 -->
+      <p class="text-xs text-slate-500 mt-3 text-center">
+        💡 提示：若要在手機上下載，點擊下載按鈕後會自動生成圖檔並儲存至您的相簿/下載資料夾。
+      </p>
+    </section>
+
+  </main>
+
+  <!-- 頁尾聲明 -->
+  <footer class="max-w-6xl mx-auto w-full text-center py-4 border-t border-slate-900 text-xs text-slate-600">
+    Designed for Meme Creators · Powered by HTML5, Tailwind CSS & html2canvas
+  </footer>
+
+  <!-- JavaScript 邏輯控制區 -->
+  <script>
+    // ==========================================
+    // 1. DOM 元素選取 (取得 HTML 中的各個控制元件)
+    // ==========================================
+    const imageUpload = document.getElementById('image-upload');
+    const dropZone = document.getElementById('drop-zone');
+    const memeImage = document.getElementById('meme-image');
+
+    const topTextInput = document.getElementById('top-text-input');
+    const bottomTextInput = document.getElementById('bottom-text-input');
+    const topTextDisplay = document.getElementById('top-text-display');
+    const bottomTextDisplay = document.getElementById('bottom-text-display');
+
+    const fontSizeSlider = document.getElementById('font-size-slider');
+    const fontSizeVal = document.getElementById('font-size-val');
+
+    const topOffsetSlider = document.getElementById('top-offset-slider');
+    const topOffsetVal = document.getElementById('top-offset-val');
+
+    const bottomOffsetSlider = document.getElementById('bottom-offset-slider');
+    const bottomOffsetVal = document.getElementById('bottom-offset-val');
+
+    const textColorPicker = document.getElementById('text-color-picker');
+    const uppercaseToggle = document.getElementById('uppercase-toggle');
+    const downloadBtn = document.getElementById('download-btn');
+    const memeContainer = document.getElementById('meme-container');
+
+    // ==========================================
+    // 2. 本機圖片上傳處理 (使用 FileReader 避免 CORS 錯誤)
+    // ==========================================
+    
+    // 處理檔案讀取並更新至圖片底圖
+    function handleFile(file) {
+      if (!file || !file.type.startsWith('image/')) {
+        alert('請上傳有效的圖片檔案 (JPG, PNG, WEBP 等)！');
+        return;
+      }
+
+      // 建立 FileReader 物件讀取本機檔案
+      const reader = new FileReader();
+      
+      reader.onload = function(e) {
+        // 將讀取的 Data URL (Base64) 賦值給 <img> 的 src
+        memeImage.src = e.target.result;
+      };
+
+      reader.readAsDataURL(file); // 開始讀取圖片
+    }
+
+    // 觸發點擊上傳區塊
+    dropZone.addEventListener('click', () => imageUpload.click());
+
+    // 監聽 input[type=file] 變更
+    imageUpload.addEventListener('change', (e) => {
+      const file = e.target.files[0];
+      handleFile(file);
+    });
+
+    // 拖曳上傳支援 (Drag and Drop)
+    dropZone.addEventListener('dragover', (e) => {
+      e.preventDefault();
+      dropZone.classList.add('border-cyan-400', 'bg-slate-800/80');
+    });
+
+    dropZone.addEventListener('dragleave', () => {
+      dropZone.classList.remove('border-cyan-400', 'bg-slate-800/80');
+    });
+
+    dropZone.addEventListener('drop', (e) => {
+      e.preventDefault();
+      dropZone.classList.remove('border-cyan-400', 'bg-slate-800/80');
+      const file = e.dataTransfer.files[0];
+      handleFile(file);
+    });
+
+    // ==========================================
+    // 3. 文字與樣式即時更新邏輯
+    // ==========================================
+
+    function updateText() {
+      let topVal = topTextInput.value;
+      let bottomVal = bottomTextInput.value;
+
+      // 是否自動轉大寫
+      if (uppercaseToggle.checked) {
+        topVal = topVal.toUpperCase();
+        bottomVal = bottomVal.toUpperCase();
+      }
+
+      topTextDisplay.innerText = topVal;
+      bottomTextDisplay.innerText = bottomVal;
+    }
+
+    // 監聽文字輸入框變更
+    topTextInput.addEventListener('input', updateText);
+    bottomTextInput.addEventListener('input', updateText);
+    uppercaseToggle.addEventListener('change', updateText);
+
+    // 監聽字體大小滑桿
+    fontSizeSlider.addEventListener('input', (e) => {
+      const size = e.target.value + 'px';
+      topTextDisplay.style.fontSize = size;
+      bottomTextDisplay.style.fontSize = size;
+      fontSizeVal.innerText = size;
+    });
+
+    // 監聽上方文字垂直距離滑桿
+    topOffsetSlider.addEventListener('input', (e) => {
+      const offset = e.target.value + 'px';
+      topTextDisplay.style.top = offset;
+      topOffsetVal.innerText = offset;
+    });
+
+    // 監聽下方文字垂直距離滑桿
+    bottomOffsetSlider.addEventListener('input', (e) => {
+      const offset = e.target.value + 'px';
+      bottomTextDisplay.style.bottom = offset;
+      bottomOffsetVal.innerText = offset;
+    });
+
+    // 監聽顏色選擇器
+    textColorPicker.addEventListener('input', (e) => {
+      const color = e.target.value;
+      topTextDisplay.style.color = color;
+      bottomTextDisplay.style.color = color;
+    });
+
+    // 初始化字體大小與文字
+    topTextDisplay.style.fontSize = fontSizeSlider.value + 'px';
+    bottomTextDisplay.style.fontSize = fontSizeSlider.value + 'px';
+
+    // ==========================================
+    // 4. 一鍵下載圖片 (html2canvas)
+    // ==========================================
+
+    downloadBtn.addEventListener('click', async () => {
+      try {
+        // 按鈕顯示載入狀態
+        downloadBtn.disabled = true;
+        downloadBtn.innerHTML = `<i class="fa-solid fa-spinner animate-spin"></i> 圖片生成中...`;
+
+        // 使用 html2canvas 轉換 #meme-container 為 HTML5 Canvas
+        const canvas = await html2canvas(memeContainer, {
+          scale: 2, // 2倍高畫質渲染
+          useCORS: true, // 允許跨域圖片 (本機 Base64 圖檔完美相容)
+          backgroundColor: null, // 透明背景
+          logging: false
+        });
+
+        // 將 Canvas 轉成 Data URL 圖片格式
+        const imageUrl = canvas.toDataURL('image/png');
+
+        // 創建虛擬 <a> 標籤觸發下載
+        const downloadLink = document.createElement('a');
+        downloadLink.href = imageUrl;
+        downloadLink.download = 'my-meme.png';
+        document.body.appendChild(downloadLink);
+        downloadLink.click();
+        document.body.removeChild(downloadLink);
+
+      } catch (error) {
+        console.error('迷因下載失敗:', error);
+        alert('下載迷因時發生錯誤，請稍後再試！');
+      } finally {
+        // 恢復按鈕狀態
+        downloadBtn.disabled = false;
+        downloadBtn.innerHTML = `<i class="fa-solid fa-download text-lg"></i> 下載高畫質迷因 (MY-MEME.PNG)`;
+      }
+    });
+  </script>
+</body>
+</html>
